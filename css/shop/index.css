@@ -5,6 +5,9 @@ html {
   align-items: center;
   flex-direction: column;
 }
+html ::-webkit-scrollbar {
+  display: none;
+}
 
 body {
   padding: 20px;
@@ -16,6 +19,9 @@ body {
   gap: 20px;
   position: relative;
   max-width: 2000px;
+}
+body ::-webkit-scrollbar {
+  display: none;
 }
 
 .test {
@@ -221,35 +227,113 @@ body {
   box-shadow: 0 0 0 2px rgba(42, 156, 213, 0.2);
 }
 .body .body--filters .filters--body .filter--container .filter--container--button {
-  display: flex;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
   gap: 10px;
-  width: 100%;
+  margin-top: 10px;
 }
 .body .body--filters .filters--body .filter--container .filter--container--button button {
+  position: relative;
   padding: 12px 15px;
   box-sizing: border-box;
   background-color: #fff;
   color: #000;
   border: 1px solid rgba(0, 0, 0, 0.15);
   border-radius: 15px;
-  font-size: 12px;
+  font-size: 14px;
   cursor: pointer;
-  transition: all 0.2s ease;
-  flex: 1;
-  text-align: center;
-  min-width: 0;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 44px;
+  outline: none;
+  font-weight: 500;
 }
 .body .body--filters .filters--body .filter--container .filter--container--button button:hover {
-  background-color: #f5f5f5;
-  border-color: rgba(0, 0, 0, 0.25);
+  background-color: #f8f9fa;
+  border-color: rgba(0, 0, 0, 0.3);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 .body .body--filters .filters--body .filter--container .filter--container--button button:active {
-  transform: translateY(1px);
+  transform: translateY(0);
+  transition: all 0.1s ease;
 }
 .body .body--filters .filters--body .filter--container .filter--container--button .selected__button {
-  background: linear-gradient(135deg, #2a9cd5, #1a7cb5);
+  background: linear-gradient(135deg, #4a6cf7, #3a56e7);
   color: #fff;
-  border-color: #2a9cd5;
+  border-color: transparent;
+  box-shadow: 0 4px 12px rgba(74, 108, 247, 0.25);
+}
+.body .body--filters .filters--body .filter--container .filter--container--button .selected__button:hover {
+  background: linear-gradient(135deg, #3a56e7, #2a46d7);
+  box-shadow: 0 6px 16px rgba(74, 108, 247, 0.35);
+}
+.body .body--filters .filters--body .filter--container .sort-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  font-size: 18px;
+  opacity: 0.8;
+}
+@keyframes selectPulse {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(0.95);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+.body .body--filters .filters--body .filter--container .filter--container--button button.selected__button {
+  animation: selectPulse 0.3s ease;
+}
+.body .body--filters .filters--body .filter--container #sort_price_asc .sort-icon::before {
+  content: "↑";
+  font-weight: bold;
+  color: inherit;
+}
+.body .body--filters .filters--body .filter--container #sort_price_desc .sort-icon::before {
+  content: "↓";
+  font-weight: bold;
+  color: inherit;
+}
+.body .body--filters .filters--body .filter--container #sort_rating_desc .sort-icon::before {
+  content: "★";
+  color: #ffc107;
+}
+.body .body--filters .filters--body .filter--container #sort_date_desc .sort-icon::before {
+  content: "🆕";
+  font-size: 16px;
+}
+@media (max-width: 768px) {
+  .body .body--filters .filters--body .filter--container .filter--container--button {
+    grid-template-columns: 1fr;
+  }
+  .body .body--filters .filters--body .filter--container .filter--container--button button {
+    font-size: 13px;
+    padding: 10px 12px;
+  }
+}
+@media (prefers-color-scheme: dark) {
+  .body .body--filters .filters--body .filter--container .filter--container--button button {
+    background-color: #2d2d2d;
+    color: #fff;
+    border-color: rgba(255, 255, 255, 0.1);
+  }
+  .body .body--filters .filters--body .filter--container .filter--container--button button:hover {
+    background-color: #3d3d3d;
+    border-color: rgba(255, 255, 255, 0.2);
+  }
+  .body .body--filters .filters--body .filter--container .filter--container--button .selected__button {
+    background: linear-gradient(135deg, #5a7cff, #4a6cf7);
+  }
 }
 .body .body--filters .filters--body .filter--container .filter--container--type {
   display: flex;
@@ -526,7 +610,9 @@ body {
 }
 
 /* Стили для загрузки и ошибок */
-.loading, .error, .no-items {
+.loading,
+.error,
+.no-items {
   text-align: center;
   padding: 50px 20px;
   grid-column: 1/-1;
@@ -601,7 +687,8 @@ body {
   color: #666;
 }
 
-.rating, .buys {
+.rating,
+.buys {
   display: flex;
   align-items: center;
   gap: 5px;
@@ -702,4 +789,101 @@ body {
 
 .buy-button:hover {
   background-color: #2980b9;
+}
+
+/* Стили для сортировки */
+.filter--container--button {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.filter--container--button button {
+  padding: 8px 12px;
+  border: 1px solid #ddd;
+  background: white;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.filter--container--button button:hover {
+  background: #f5f5f5;
+}
+
+.filter--container--button button.selected__button {
+  background: #007bff;
+  color: white;
+  border-color: #007bff;
+}
+
+/* Стили для загрузки и ошибок */
+.loading {
+  text-align: center;
+  padding: 40px;
+}
+
+.loading-spinner {
+  border: 4px solid #f3f3f3;
+  border-top: 4px solid #007bff;
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  animation: spin 1s linear infinite;
+  margin: 0 auto 20px;
+}
+
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+.error {
+  text-align: center;
+  padding: 40px;
+  color: #dc3545;
+}
+
+.error button {
+  margin-top: 20px;
+  padding: 10px 20px;
+  background: #007bff;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.no-items {
+  text-align: center;
+  padding: 40px;
+  color: #6c757d;
+}
+
+/* Уведомление о добавлении в корзину */
+.cart-notification {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  background: #28a745;
+  color: white;
+  padding: 15px 20px;
+  border-radius: 4px;
+  z-index: 1000;
+  animation: slideIn 0.3s ease-out;
+}
+
+@keyframes slideIn {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
 }/*# sourceMappingURL=index.css.map */

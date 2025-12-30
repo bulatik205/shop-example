@@ -1,97 +1,57 @@
-const filter__price__top = document.getElementById("filter__price__top");
-const filter__price__down = document.getElementById("filter__price__down");
-const filter__popular__top = document.getElementById("filter__popular__top");
-const filter__popular__down = document.getElementById("filter__popular__down");
-const filter__data__new = document.getElementById("filter__data__new");
-const filter__data__last = document.getElementById("filter__data__last");
-const filter = document.getElementById("filter");
-const filter__body = document.getElementById("filter--body");
-const filter__submit = document.getElementById("filter--submit");
-const minPriceInput = document.getElementById('min');
-const maxPriceInput = document.getElementById('max');
-const typeCheckboxes = document.querySelectorAll('input[name="type[]"]');
-
-let isHide = true;
-
-document.addEventListener('DOMContentLoaded', function () {
-    if (localStorage.getItem("menu--open") === "true") {
-        setTimeout(() => {
-            filter.click();
-        }, 1);
-    }
+document.addEventListener('DOMContentLoaded', function() {
+    const filterBtn = document.getElementById('filter');
+    const filterBody = document.getElementById('filter--body');
+    const filterSubmit = document.getElementById('filter--submit');
+    const minInput = document.getElementById('min');
+    const maxInput = document.getElementById('max');
+    const typeCheckboxes = document.querySelectorAll('input[name="type[]"]');
+    const sortButtons = document.querySelectorAll('[data-sort]');
+    
+    let isFilterVisible = false;
+    let currentSort = 'date_desc'; 
 
     const params = new URLSearchParams(window.location.search);
     
+    if (params.has('sort')) {
+        currentSort = params.get('sort');
+        setActiveSortButton(currentSort);
+    }
+    
     restoreFiltersFromURL(params);
     
-    setupPriceInputs();
+    loadItems();
     
-    if (typeof loadItems === 'function') {
-        loadItems();
-    }
-});
-
-function restoreFiltersFromURL(params) {
-    if (params.has('price')) {
-        if (params.get('price') === 'top') {
-            filter__price__top.classList.add('selected__button');
-            filter__price__down.classList.remove('selected__button');
-        } else if (params.get('price') === 'down') {
-            filter__price__top.classList.remove('selected__button');
-            filter__price__down.classList.add('selected__button');
-        }
-    }
-
-    if (params.has('popular')) {
-        if (params.get('popular') === 'top') {
-            filter__popular__top.classList.add('selected__button');
-            filter__popular__down.classList.remove('selected__button');
-        } else if (params.get('popular') === 'down') {
-            filter__popular__top.classList.remove('selected__button');
-            filter__popular__down.classList.add('selected__button');
-        }
-    }
-
-    if (params.has('data')) {
-        if (params.get('data') === 'new') {
-            filter__data__new.classList.add('selected__button');
-            filter__data__last.classList.remove('selected__button');
-        } else if (params.get('data') === 'last') {
-            filter__data__new.classList.remove('selected__button');
-            filter__data__last.classList.add('selected__button');
-        }
-    }
-
-    if (params.has('min')) {
-        const minValue = params.get('min');
-        minPriceInput.value = parseInt(minValue).toLocaleString('ru-RU');
-    }
-
-    if (params.has('max')) {
-        const maxValue = params.get('max');
-        maxPriceInput.value = parseInt(maxValue).toLocaleString('ru-RU');
-    }
-
-    if (params.has('type')) {
-        const selectedTypes = params.getAll('type');
+    filterBtn.addEventListener('click', function() {
+        isFilterVisible = !isFilterVisible;
+        filterBody.style.display = isFilterVisible ? 'flex' : 'none';
+        filterSubmit.style.display = isFilterVisible ? 'block' : 'none';
         
-        typeCheckboxes.forEach(checkbox => {
-            if (selectedTypes.includes(checkbox.value)) {
-                checkbox.checked = true;
-            }
+        if (isFilterVisible) {
+            localStorage.setItem('filter_visible', 'true');
+        } else {
+            localStorage.removeItem('filter_visible');
+        }
+    });
+    
+    sortButtons.forEach(button => {
+        button.addEventListener('click', function() {
+            currentSort = this.getAttribute('data-sort');
+            setActiveSortButton(currentSort);
+            updateURLParam('sort', currentSort);
+            loadItems();
         });
-    }
-}
-
-function setupPriceInputs() {
-    [minPriceInput, maxPriceInput].forEach(input => {
-        if (!input) return;
-        
-        input.addEventListener('input', function (e) {
+    });
+    
+    filterSubmit.addEventListener('click', function() {
+        applyFilters();
+    });
+    
+    [minInput, maxInput].forEach(input => {
+        input.addEventListener('input', function(e) {
             this.value = this.value.replace(/[^\d]/g, '');
         });
-
-        input.addEventListener('blur', function () {
+        
+        input.addEventListener('blur', function() {
             if (this.value) {
                 const num = parseInt(this.value);
                 if (!isNaN(num)) {
@@ -99,182 +59,285 @@ function setupPriceInputs() {
                 }
             }
         });
-
-        input.addEventListener('focus', function () {
+        
+        input.addEventListener('focus', function() {
             this.value = this.value.replace(/\s/g, '');
         });
-
-        input.addEventListener('keydown', function (e) {
-            if (!/[\d]|Backspace|Delete|Tab|ArrowLeft|ArrowRight/.test(e.key)) {
-                e.preventDefault();
+    });
+    
+    if (localStorage.getItem('filter_visible') === 'true') {
+        setTimeout(() => {
+            filterBtn.click();
+        }, 100);
+    }
+    
+    window.addEventListener('popstate', function() {
+        const newParams = new URLSearchParams(window.location.search);
+        if (newParams.has('sort')) {
+            currentSort = newParams.get('sort');
+            setActiveSortButton(currentSort);
+        }
+        restoreFiltersFromURL(newParams);
+        loadItems();
+    });
+    
+    function setActiveSortButton(sortValue) {
+        sortButtons.forEach(button => {
+            button.classList.remove('selected__button');
+            if (button.getAttribute('data-sort') === sortValue) {
+                button.classList.add('selected__button');
             }
         });
-    });
-
-    maxPriceInput.addEventListener('blur', function () {
-        const minValue = parseInt(minPriceInput.value.replace(/\s/g, '')) || 0;
-        const maxValue = parseInt(this.value.replace(/\s/g, '')) || 0;
-
-        if (maxValue > 0 && minValue > maxValue) {
-            this.value = (minValue + 100).toLocaleString('ru-RU');
+    }
+    
+    function restoreFiltersFromURL(params) {
+        if (params.has('min')) {
+            const minValue = params.get('min');
+            minInput.value = parseInt(minValue).toLocaleString('ru-RU');
         }
-    });
-}
-
-filter.addEventListener('click', function () {
-    if (isHide) {
-        isHide = false;
-        filter__body.style.display = "flex";
-        filter__submit.style.display = "block";
-    } else {
-        localStorage.removeItem("menu--open");
-        localStorage.setItem("menu--open", false);
-        isHide = true;
-        filter__body.style.display = "none";
-        filter__submit.style.display = "none";
-    }
-});
-
-function handleSortClick(button, paramName, value) {
-    const buttonGroup = button.closest('.filter--container--button');
-    buttonGroup.querySelectorAll('button').forEach(btn => {
-        btn.classList.remove('selected__button');
-    });
-    
-    button.classList.add('selected__button');
-    
-    updateURL(paramName, value);
-}
-
-filter__price__top.addEventListener('click', function() {
-    handleSortClick(this, 'price', 'top');
-});
-
-filter__price__down.addEventListener('click', function() {
-    handleSortClick(this, 'price', 'down');
-});
-
-filter__popular__top.addEventListener('click', function() {
-    handleSortClick(this, 'popular', 'top');
-});
-
-filter__popular__down.addEventListener('click', function() {
-    handleSortClick(this, 'popular', 'down');
-});
-
-filter__data__new.addEventListener('click', function() {
-    handleSortClick(this, 'data', 'new');
-});
-
-filter__data__last.addEventListener('click', function() {
-    handleSortClick(this, 'data', 'last');
-});
-
-filter__submit.addEventListener('click', function() {
-    applyAllFilters();
-});
-
-function updateURL(paramName, paramValue) {
-    const params = new URLSearchParams(window.location.search);
-    params.set(paramName, paramValue);
-    
-    // Обновляем URL без перезагрузки страницы
-    const newUrl = window.location.pathname + '?' + params.toString();
-    window.history.pushState({}, '', newUrl);
-    
-    // Загружаем товары с новыми параметрами
-    if (typeof loadItems === 'function') {
-        loadItems();
-    }
-    
-    localStorage.setItem("menu--open", true);
-}
-
-function applyAllFilters() {
-    const params = new URLSearchParams();
-    
-    if (filter__price__top.classList.contains('selected__button')) {
-        params.set('price', 'top');
-    } else if (filter__price__down.classList.contains('selected__button')) {
-        params.set('price', 'down');
-    }
-    
-    if (filter__popular__top.classList.contains('selected__button')) {
-        params.set('popular', 'top');
-    } else if (filter__popular__down.classList.contains('selected__button')) {
-        params.set('popular', 'down');
-    }
-    
-    if (filter__data__new.classList.contains('selected__button')) {
-        params.set('data', 'new');
-    } else if (filter__data__last.classList.contains('selected__button')) {
-        params.set('data', 'last');
-    }
-    
-    const minValue = minPriceInput.value.replace(/\s/g, '');
-    if (minValue) {
-        params.set('min', minValue);
-    }
-    
-    const maxValue = maxPriceInput.value.replace(/\s/g, '');
-    if (maxValue) {
-        params.set('max', maxValue);
-    }
-    
-    typeCheckboxes.forEach(checkbox => {
-        if (checkbox.checked) {
-            params.append('type', checkbox.value);
+        
+        if (params.has('max')) {
+            const maxValue = params.get('max');
+            maxInput.value = parseInt(maxValue).toLocaleString('ru-RU');
         }
-    });
-    
-    // Обновляем URL без перезагрузки страницы
-    const newUrl = window.location.pathname + '?' + params.toString();
-    window.history.pushState({}, '', newUrl);
-    
-    // Загружаем товары с новыми параметрами
-    if (typeof loadItems === 'function') {
-        loadItems();
+        
+        if (params.has('type')) {
+            const selectedTypes = params.getAll('type');
+            typeCheckboxes.forEach(checkbox => {
+                checkbox.checked = selectedTypes.includes(checkbox.value);
+            });
+        }
     }
     
-    localStorage.setItem("menu--open", true);
-}
-
-// Добавляем обработчик для кнопок "Купить" (делегирование событий)
-document.addEventListener('click', function(e) {
-    if (e.target.classList.contains('buy-button')) {
-        const productId = e.target.getAttribute('data-id');
-        const productName = e.target.closest('.container').querySelector('.item-name').textContent;
-        addToCart(productId, productName);
-    }
-});
-
-// Добавляем обработчик для изменения чекбоксов типов товаров
-typeCheckboxes.forEach(checkbox => {
-    checkbox.addEventListener('change', function() {
-        // Можно либо сразу применять фильтры при изменении чекбокса,
-        // либо ждать нажатия кнопки "Применить"
-        // Для немедленного применения раскомментируйте следующую строку:
-        // applyAllFilters();
-    });
-});
-
-// Добавляем обработчик для изменения ценовых полей
-[minPriceInput, maxPriceInput].forEach(input => {
-    if (input) {
-        input.addEventListener('change', function() {
-            // Можно либо сразу применять фильтры при изменении цены,
-            // либо ждать нажатия кнопки "Применить"
-            // Для немедленного применения раскомментируйте следующую строку:
-            // applyAllFilters();
+    function applyFilters() {
+        const params = new URLSearchParams();
+        
+        params.set('sort', currentSort);
+        
+        const minValue = minInput.value.replace(/\s/g, '');
+        if (minValue) {
+            params.set('min', minValue);
+        }
+        
+        const maxValue = maxInput.value.replace(/\s/g, '');
+        if (maxValue) {
+            params.set('max', maxValue);
+        }
+        
+        typeCheckboxes.forEach(checkbox => {
+            if (checkbox.checked) {
+                params.append('type', checkbox.value);
+            }
         });
+        
+        const newUrl = window.location.pathname + '?' + params.toString();
+        window.history.pushState({}, '', newUrl);
+        
+        loadItems();
+    }
+    
+    function updateURLParam(key, value) {
+        const params = new URLSearchParams(window.location.search);
+        params.set(key, value);
+        const newUrl = window.location.pathname + '?' + params.toString();
+        window.history.pushState({}, '', newUrl);
     }
 });
 
-// Функция добавления в корзину (заглушка)
+function loadItems() {
+    const params = getFilterParams();
+    const apiUrl = '/shop/api/get/items/index.php';
+    
+    showLoading();
+    
+    console.log('Отправка параметров:', params);
+    
+    fetch(apiUrl, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(params)
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error('Ошибка сети: ' + response.status);
+        }
+        return response.json();
+    })
+    .then(data => {
+        console.log('Получено товаров:', data.length);
+        
+        if (data.status === "401" || data.status === "500") {
+            showError(data.message);
+            return;
+        }
+        
+        updateResultsCount(data.length);
+        displayItems(data);
+    })
+    .catch(error => {
+        console.error('Ошибка:', error);
+        showError('Ошибка при загрузке данных: ' + error.message);
+    });
+}
+
+function getFilterParams() {
+    const params = new URLSearchParams(window.location.search);
+    const filterParams = {};
+    
+    if (params.has('sort')) {
+        const sort = params.get('sort');
+        switch(sort) {
+            case 'price_asc':
+                filterParams.price = 'asc';
+                break;
+            case 'price_desc':
+                filterParams.price = 'desc';
+                break;
+            case 'rating_desc':
+                filterParams.popular = 'desc';
+                break;
+            case 'date_desc':
+                filterParams.data = 'desc';
+                break;
+        }
+    }
+    
+    if (params.has('min')) {
+        const minValue = params.get('min').replace(/\s/g, '');
+        if (minValue) filterParams.min = minValue;
+    }
+    
+    if (params.has('max')) {
+        const maxValue = params.get('max').replace(/\s/g, '');
+        if (maxValue) filterParams.max = maxValue;
+    }
+    
+    const types = params.getAll('type');
+    if (types.length > 0) {
+        filterParams.type = types;
+    }
+    
+    return filterParams;
+}
+
+function displayItems(items) {
+    const itemsContainer = document.querySelector('.body--items--body');
+    
+    itemsContainer.innerHTML = '';
+    
+    if (items.length === 0) {
+        itemsContainer.innerHTML = `
+            <div class="no-items">
+                <p>Товары не найдены</p>
+                <p>Попробуйте изменить параметры фильтрации</p>
+            </div>
+        `;
+        return;
+    }
+    
+    items.forEach(item => {
+        const itemElement = createItemElement(item);
+        itemsContainer.appendChild(itemElement);
+    });
+}
+
+function createItemElement(item) {
+    const container = document.createElement('div');
+    container.className = 'container';
+    
+    const formattedPrice = formatPrice(item.price);
+    const formattedLastPrice = item.last_price ? formatPrice(item.last_price) : null;
+    const rating = parseFloat(item.rating || 0);
+    const isPopular = rating > 4;
+    
+    container.innerHTML = `
+        <div class="container--image ${isPopular ? 'popular' : ''}">
+            <img src="${item.image || '../css/images/photo-1.jpg'}" alt="${item.name}" onerror="this.src='../css/images/photo-1.jpg'">
+        </div>
+        
+        <div class="container--info">
+            <div class="container--info--body">
+                <p class="item-name">${escapeHtml(item.name)}</p>
+                ${item.description ? `<p class="item-description">${escapeHtml(item.description)}</p>` : ''}
+                
+                <div class="price-container">
+                    ${formattedLastPrice ? `
+                        <span class="old-price">${formattedLastPrice} ₽</span>
+                        <span class="current-price">${formattedPrice} ₽</span>
+                    ` : `
+                        <span class="current-price single">${formattedPrice} ₽</span>
+                    `}
+                </div>
+                
+                <div class="item-stats">
+                    <span class="rating">
+                        ⭐ ${rating.toFixed(1)}
+                    </span>
+                    <span class="buys">
+                        🛒 ${item.buys || 0} покупок
+                    </span>
+                </div>
+            </div>
+            
+            <div class="container--info--buy">
+                <button class="buy-button" data-id="${item.id}">Купить</button>
+            </div>
+        </div>
+    `;
+    
+    const buyButton = container.querySelector('.buy-button');
+    buyButton.addEventListener('click', function() {
+        addToCart(item.id, item.name);
+    });
+    
+    return container;
+}
+
+function showLoading() {
+    const itemsContainer = document.querySelector('.body--items--body');
+    itemsContainer.innerHTML = `
+        <div class="loading">
+            <div class="loading-spinner"></div>
+            <p>Загрузка товаров...</p>
+        </div>
+    `;
+}
+
+function showError(message) {
+    const itemsContainer = document.querySelector('.body--items--body');
+    itemsContainer.innerHTML = `
+        <div class="error">
+            <p>❌ ${message}</p>
+            <button onclick="loadItems()">Попробовать снова</button>
+        </div>
+    `;
+}
+
+function updateResultsCount(count) {
+    const resultsElement = document.querySelector('.main--body p');
+    if (resultsElement) {
+        resultsElement.textContent = `Результатов: ${count}`;
+    }
+}
+
+function formatPrice(price) {
+    const num = parseFloat(price);
+    if (isNaN(num)) return '0';
+    return num.toLocaleString('ru-RU');
+}
+
+function escapeHtml(text) {
+    if (!text) return '';
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
 function addToCart(productId, productName) {
     console.log(`Добавлен товар ${productId}: ${productName}`);
     
-    // Временное уведомление
     const notification = document.createElement('div');
     notification.className = 'cart-notification';
     notification.textContent = `Товар "${productName}" добавлен в корзину`;
@@ -285,25 +348,4 @@ function addToCart(productId, productName) {
     }, 3000);
 }
 
-// Обновляем URL при нажатии кнопок сортировки
-filter__price__top.addEventListener('click', function() {
-    const params = new URLSearchParams(window.location.search);
-    params.set('price', 'top');
-    window.history.pushState({}, '', window.location.pathname + '?' + params.toString());
-    if (typeof loadItems === 'function') loadItems();
-});
-
-filter__price__down.addEventListener('click', function() {
-    const params = new URLSearchParams(window.location.search);
-    params.set('price', 'down');
-    window.history.pushState({}, '', window.location.pathname + '?' + params.toString());
-    if (typeof loadItems === 'function') loadItems();
-});
-
-window.addEventListener('popstate', function() {
-    const params = new URLSearchParams(window.location.search);
-    restoreFiltersFromURL(params);
-    if (typeof loadItems === 'function') {
-        loadItems();
-    }
-});
+window.loadItems = loadItems;

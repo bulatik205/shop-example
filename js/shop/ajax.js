@@ -1,7 +1,6 @@
 document.addEventListener('DOMContentLoaded', function() {
     loadItems();
     
-    // Перезагружаем данные при изменении фильтров через URL
     window.addEventListener('popstate', function() {
         loadItems();
     });
@@ -110,7 +109,6 @@ function createItemElement(item) {
     container.innerHTML = `
         <div class="container--image ${popularClass}">
             <img src="${item.image || '../css/images/photo-1.jpg'}" alt="${item.name}" onerror="this.src='../css/images/photo-1.jpg'">
-            ${isPopular ? '<span class="popular-badge">Популярный</span>' : ''}
         </div>
         
         <div class="container--info">

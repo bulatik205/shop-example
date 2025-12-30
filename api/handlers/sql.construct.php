@@ -27,13 +27,11 @@ class SQLConstruct {
         $conditions = [];
 
         if ($this->param_min !== null) {
-            // Конвертируем строковое поле price в число для сравнения
             $conditions[] = "CAST(price AS DECIMAL(10,2)) >= ?";
             $this->execute[] = $this->param_min;
         }
 
         if ($this->param_max !== null) {
-            // Конвертируем строковое поле price в число для сравнения
             $conditions[] = "CAST(price AS DECIMAL(10,2)) <= ?";
             $this->execute[] = $this->param_max;
         }
@@ -48,27 +46,23 @@ class SQLConstruct {
     }
 
     public function paramOrder() {
-        $orderClauses = [];
+        $orderClause = "";
         
-        if ($this->param_price === 'top') {
-            $orderClauses[] = "CAST(price AS DECIMAL(10,2)) ASC";
-        } elseif ($this->param_price === 'down') {
-            $orderClauses[] = "CAST(price AS DECIMAL(10,2)) DESC";
-        }
-
-        if ($this->param_popular === 'top') {
-            $orderClauses[] = "CAST(rating AS DECIMAL(3,2)) ASC";
-        } elseif ($this->param_popular === 'down') {
-            $orderClauses[] = "CAST(rating AS DECIMAL(3,2)) DESC";
+        if ($this->param_price === 'asc') {
+            $orderClause = "CAST(price AS DECIMAL(10,2)) ASC";
+        } elseif ($this->param_price === 'desc') {
+            $orderClause = "CAST(price AS DECIMAL(10,2)) DESC";
+        } elseif ($this->param_popular === 'asc') {
+            $orderClause = "CAST(rating AS DECIMAL(3,2)) ASC";
+        } elseif ($this->param_popular === 'desc') {
+            $orderClause = "CAST(rating AS DECIMAL(3,2)) DESC";
+        } elseif ($this->param_data === 'asc') {
+            $orderClause = "data ASC";
+        } elseif ($this->param_data === 'desc') {
+            $orderClause = "data DESC";
         }
         
-        if ($this->param_data === 'new') {
-            $orderClauses[] = "data ASC";
-        } elseif ($this->param_data === 'last') {
-            $orderClauses[] = "data DESC";
-        }
-
-        return $orderClauses;
+        return $orderClause ? [$orderClause] : [];
     }
 
     public function build() {
@@ -83,7 +77,7 @@ class SQLConstruct {
             $this->sql .= " ORDER BY " . implode(", ", $orderClauses);
         }
 
-        $this->sql .= " LIMIT 20";
+        $this->sql .= " LIMIT 100";
 
         return [
             'sql' => $this->sql,
@@ -91,3 +85,4 @@ class SQLConstruct {
         ];
     }
 }
+?>

@@ -60,13 +60,14 @@ try {
     error_log("Database error: " . $e->getMessage());
     echo json_encode([
         "status" => "500", 
-        "message" => "Database Error: " . $e->getMessage(),
-        "sql_error" => $e->getMessage()
+        "message" => "Database Error",
+        "debug" => $e->getMessage()
     ]);
 } catch (Exception $e) {
     error_log("General error: " . $e->getMessage());
     echo json_encode([
         "status" => "500", 
-        "message" => "Internal Server Error: " . $e->getMessage()
+        "message" => "Internal Server Error"
     ]);
 }
+?>
