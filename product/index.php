@@ -36,12 +36,12 @@
                     <div class="filter--price-inputs">
                         <div class="price-input-group">
                             <span class="price-prefix">От</span>
-                            <input type="text" class="price-input" data-type="min" inputmode="numeric">
+                            <input type="text" class="price-input" data-type="min" inputmode="numeric" id="min">
                         </div>
 
                         <div class="price-input-group">
                             <span class="price-prefix">До</span>
-                            <input type="text" class="price-input" data-type="max" inputmode="numeric">
+                            <input type="text" class="price-input" data-type="max" inputmode="numeric" id="max">
                         </div>
                     </div>
                 </div>
@@ -141,6 +141,7 @@
         </div>
     </div>
 
+    <script src="../js/shop/ajax.js"></script>
     <script src="../js/shop/index.js"></script>
 </body>
 

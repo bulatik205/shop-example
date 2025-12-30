@@ -1,0 +1,15 @@
+{
+    "price": "top",
+    "popular": "top",
+    "data": "new",
+    "min": "100",
+    "max": "1000",
+    "type": [
+        "shirts",
+        "pants",
+        "shorts",
+        "socks",
+        "hats",
+        "shoes"
+    ]
+}

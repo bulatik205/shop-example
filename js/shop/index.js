@@ -7,11 +7,9 @@ const filter__data__last = document.getElementById("filter__data__last");
 const filter = document.getElementById("filter");
 const filter__body = document.getElementById("filter--body");
 const filter__submit = document.getElementById("filter--submit");
-const minPriceInput = document.querySelector('.price-input[data-type="min"]');
-const maxPriceInput = document.querySelector('.price-input[data-type="max"]');
+const minPriceInput = document.getElementById('min');
+const maxPriceInput = document.getElementById('max');
 const typeCheckboxes = document.querySelectorAll('input[name="type[]"]');
-
-const PRODUCT_TYPES = ['shirts', 'pants', 'shorts', 'socks', 'hats', 'shoes'];
 
 let isHide = true;
 
@@ -21,10 +19,16 @@ document.addEventListener('DOMContentLoaded', function () {
             filter.click();
         }, 1);
     }
+
+    const params = new URLSearchParams(window.location.search);
     
     restoreFiltersFromURL(params);
     
     setupPriceInputs();
+    
+    if (typeof loadItems === 'function') {
+        loadItems();
+    }
 });
 
 function restoreFiltersFromURL(params) {
@@ -169,10 +173,20 @@ filter__data__last.addEventListener('click', function() {
 filter__submit.addEventListener('click', function() {
     applyAllFilters();
 });
+
 function updateURL(paramName, paramValue) {
     const params = new URLSearchParams(window.location.search);
     params.set(paramName, paramValue);
-    window.location.search = params.toString();
+    
+    // Обновляем URL без перезагрузки страницы
+    const newUrl = window.location.pathname + '?' + params.toString();
+    window.history.pushState({}, '', newUrl);
+    
+    // Загружаем товары с новыми параметрами
+    if (typeof loadItems === 'function') {
+        loadItems();
+    }
+    
     localStorage.setItem("menu--open", true);
 }
 
@@ -213,6 +227,83 @@ function applyAllFilters() {
         }
     });
     
-    window.location.search = params.toString();
+    // Обновляем URL без перезагрузки страницы
+    const newUrl = window.location.pathname + '?' + params.toString();
+    window.history.pushState({}, '', newUrl);
+    
+    // Загружаем товары с новыми параметрами
+    if (typeof loadItems === 'function') {
+        loadItems();
+    }
+    
     localStorage.setItem("menu--open", true);
 }
+
+// Добавляем обработчик для кнопок "Купить" (делегирование событий)
+document.addEventListener('click', function(e) {
+    if (e.target.classList.contains('buy-button')) {
+        const productId = e.target.getAttribute('data-id');
+        const productName = e.target.closest('.container').querySelector('.item-name').textContent;
+        addToCart(productId, productName);
+    }
+});
+
+// Добавляем обработчик для изменения чекбоксов типов товаров
+typeCheckboxes.forEach(checkbox => {
+    checkbox.addEventListener('change', function() {
+        // Можно либо сразу применять фильтры при изменении чекбокса,
+        // либо ждать нажатия кнопки "Применить"
+        // Для немедленного применения раскомментируйте следующую строку:
+        // applyAllFilters();
+    });
+});
+
+// Добавляем обработчик для изменения ценовых полей
+[minPriceInput, maxPriceInput].forEach(input => {
+    if (input) {
+        input.addEventListener('change', function() {
+            // Можно либо сразу применять фильтры при изменении цены,
+            // либо ждать нажатия кнопки "Применить"
+            // Для немедленного применения раскомментируйте следующую строку:
+            // applyAllFilters();
+        });
+    }
+});
+
+// Функция добавления в корзину (заглушка)
+function addToCart(productId, productName) {
+    console.log(`Добавлен товар ${productId}: ${productName}`);
+    
+    // Временное уведомление
+    const notification = document.createElement('div');
+    notification.className = 'cart-notification';
+    notification.textContent = `Товар "${productName}" добавлен в корзину`;
+    document.body.appendChild(notification);
+    
+    setTimeout(() => {
+        notification.remove();
+    }, 3000);
+}
+
+// Обновляем URL при нажатии кнопок сортировки
+filter__price__top.addEventListener('click', function() {
+    const params = new URLSearchParams(window.location.search);
+    params.set('price', 'top');
+    window.history.pushState({}, '', window.location.pathname + '?' + params.toString());
+    if (typeof loadItems === 'function') loadItems();
+});
+
+filter__price__down.addEventListener('click', function() {
+    const params = new URLSearchParams(window.location.search);
+    params.set('price', 'down');
+    window.history.pushState({}, '', window.location.pathname + '?' + params.toString());
+    if (typeof loadItems === 'function') loadItems();
+});
+
+window.addEventListener('popstate', function() {
+    const params = new URLSearchParams(window.location.search);
+    restoreFiltersFromURL(params);
+    if (typeof loadItems === 'function') {
+        loadItems();
+    }
+});
